@@ -127,6 +127,10 @@ class AnswerRequest(BaseModel):
     context_docs: list[str]
 
 
+class GeneralAnswerRequest(BaseModel):
+    query: str
+
+
 @app.post("/generate-answer")
 def generate_answer_endpoint(req: AnswerRequest):
     """Separate endpoint for LLM answer generation."""
@@ -137,34 +141,101 @@ def generate_answer_endpoint(req: AnswerRequest):
     return {"answer": answer}
 
 
-class GeneralAnswerRequest(BaseModel):
-    query: str
-
-
 @app.post("/general-answer")
 def general_answer(req: GeneralAnswerRequest):
     """
     General AI answer — responds to any query using Ollama.
-    No KB context needed. Works for greetings, general questions, etc.
+    Falls back to smart rule-based responses if Ollama is offline.
     """
     import ollama as ollama_lib
+
     prompt = f"""You are a helpful AI assistant for a telecom support team's knowledge base.
 Answer the following question helpfully and concisely.
 If it's a greeting or casual message, respond naturally.
-If it's a technical question, give a clear answer.
-If you don't know, say so honestly.
+If it's a technical question, give a clear structured answer.
 
 Question: {req.query}
 
 Answer:"""
+
     try:
         response = ollama_lib.chat(
             model='llama3.2',
             messages=[{"role": "user", "content": prompt}]
         )
         return {"answer": response['message']['content']}
-    except Exception as e:
-        return {"answer": f"I'm here to help! However, I couldn't process your request right now ({str(e)}). Please try again."}
+    except Exception:
+        # Ollama offline — smart fallback responses
+        return {"answer": _fallback_answer(req.query)}
+
+
+def _fallback_answer(query: str) -> str:
+    """Rule-based fallback when Ollama is not running."""
+    q = query.lower().strip()
+
+    if any(w in q for w in ['hello', 'hi', 'hey', 'good morning', 'good afternoon']):
+        return "Hello! 👋 I'm your AI assistant for telecom support. How can I help you today?"
+
+    if any(w in q for w in ['how are you', 'how r u', "how's it going"]):
+        return "I'm doing great, thanks for asking! I'm here to help with telecom support issues. What's your question?"
+
+    if any(w in q for w in ['thank', 'thanks', 'thank you']):
+        return "You're welcome! 😊 Feel free to ask if you have any other questions."
+
+    if any(w in q for w in ['bye', 'goodbye', 'see you']):
+        return "Goodbye! Come back anytime if you need help. 👋"
+
+    if any(w in q for w in ['what can you do', 'help me', 'how do you work', 'capabilities']):
+        return ("I can help you with:\n"
+                "• Finding solutions in the knowledge base\n"
+                "• Telecom issues: billing, recharge, network, SIM, roaming\n"
+                "• Creating and updating confluence pages\n"
+                "• Answering general support questions\n\n"
+                "Just type your problem and I'll find the best solution!")
+
+    if any(w in q for w in ['payment', 'recharge', 'not credited', 'deducted']):
+        return ("For payment/recharge issues:\n"
+                "1. Check your transaction ID or payment screenshot\n"
+                "2. Verify payment status in the billing portal\n"
+                "3. If paid but not credited — raise a manual credit request\n"
+                "4. Credit reflects within 2–4 hours\n"
+                "5. If payment failed — retry with alternate payment method\n\n"
+                "Search the Knowledge Base tab for detailed confluence pages on this issue.")
+
+    if any(w in q for w in ['network', 'signal', 'no service', 'coverage']):
+        return ("For network/signal issues:\n"
+                "1. Toggle Airplane Mode OFF/ON\n"
+                "2. Check for network outages in your area\n"
+                "3. Verify APN settings are correct\n"
+                "4. Restart your device\n"
+                "5. Try Wi-Fi Calling if indoor signal is poor\n\n"
+                "Check the Knowledge Base tab for detailed troubleshooting guides.")
+
+    if any(w in q for w in ['vpn', 'connect', 'internet', 'slow', 'speed']):
+        return ("For VPN/internet issues:\n"
+                "1. Check if your data plan is active\n"
+                "2. Verify APN settings: Settings → Mobile Networks → APN\n"
+                "3. Restart device and reconnect\n"
+                "4. Check if FUP (Fair Usage Policy) limit is reached\n"
+                "5. For VPN — ensure your plan supports enterprise connectivity\n\n"
+                "Search the Knowledge Base for specific solutions.")
+
+    if any(w in q for w in ['bill', 'billing', 'charge', 'invoice', 'overcharge']):
+        return ("For billing issues:\n"
+                "1. Pull your itemized bill for the billing period\n"
+                "2. Check for any unauthorized VAS subscriptions\n"
+                "3. Compare charges with your plan details\n"
+                "4. Raise a reversal request if overcharged\n"
+                "5. Credit reflects in 24–48 hours\n\n"
+                "Check the Knowledge Base tab for detailed billing confluence pages.")
+
+    # Generic fallback
+    return (f"I understand you're asking about: \"{query}\"\n\n"
+            "Here's how I can help:\n"
+            "• Check the **Knowledge Base** tab — it may have a matching confluence page\n"
+            "• Check the **Web Search** tab for general information\n"
+            "• Try rephrasing your question with specific keywords\n\n"
+            "Note: Full AI responses require the Ollama service to be running on the server.")
 
 
 @app.post("/upload-query")
