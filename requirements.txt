@@ -1,4 +1,13 @@
+# Vector DB
 chromadb>=0.6.0
+
+# Embeddings (ONNX based - no torch needed)
 sentence-transformers==3.0.1
-streamlit>=1.40.0
+
+# Local LLM
 ollama==0.3.0
+
+# FastAPI backend
+fastapi>=0.100.0
+uvicorn>=0.18.3
+python-multipart>=0.0.10
