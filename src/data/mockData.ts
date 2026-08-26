@@ -1,7 +1,7 @@
 import type { Category, ConfluencePage } from '../types'
 
 export const CATEGORIES: Category[] = [
-  { id: 'account', name: 'Account Issues', icon: '👤', count: 8 },
+  { id: 'account', name: 'Account Issues', icon: '👤', count: 9 },
   { id: 'network', name: 'Network Related Issues', icon: '📡', count: 12 },
   { id: 'apps', name: 'Apps & Transaction Issues', icon: '📱', count: 6 },
   { id: 'prepaid', name: 'Prepaid Issues', icon: '💳', count: 9 },
