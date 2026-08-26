@@ -1,0 +1,16 @@
+Title: Data Pack Not Activated After Purchase
+
+Problem:
+Customer purchased a data add-on pack but it is not showing as active and data is being deducted from main balance.
+
+Resolution Steps:
+1. Verify purchase in CRM > Add-Ons > Active Packs.
+2. If pack shows in CRM but not on device: ask customer to dial *123# to check balance and active packs.
+3. Restart device — sometimes pack activation requires network refresh.
+4. If pack not in CRM despite payment: check payment status and process manual activation.
+5. Ensure the data pack is compatible with customer's base plan.
+
+Common Conflicts:
+Some promotional data packs are not compatible with legacy plans. Verify pack eligibility before activation.
+
+Tags: data pack, add-on, activation, prepaid, postpaid, balance, *123#

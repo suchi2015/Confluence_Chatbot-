@@ -1,0 +1,19 @@
+Title: Customer Unable to Login to Self-Care App
+
+Problem:
+Customer cannot log into the MyOperator self-care app or web portal.
+
+Common Causes:
+- Forgotten password.
+- Account locked after multiple failed attempts.
+- OTP not received for SMS-based login.
+- App version outdated.
+
+Resolution Steps:
+1. Guide customer to use Forgot Password and reset via registered email or OTP.
+2. If account locked: unlock from CRM > Customer Profile > Account Status.
+3. If OTP not received: check if mobile number is correct and network is available. Retry OTP after 60 seconds.
+4. Ask customer to update app from Play Store or App Store if version is older than 3 months.
+5. Clear app cache if app crashes after login: Settings > Apps > MyOperator > Clear Cache.
+
+Tags: account, login, password, OTP, app, self-care portal, locked

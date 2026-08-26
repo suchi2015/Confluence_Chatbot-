@@ -1,0 +1,18 @@
+Title: Transaction Stuck in Processing State
+
+Problem:
+Customer's transaction shows "Processing" for more than 30 minutes without completing.
+
+Standard Behavior:
+Transactions typically complete within 2-5 minutes. If stuck beyond 30 minutes, it is an exception.
+
+Resolution Steps:
+1. Check transaction status in CRM Payments Dashboard using transaction ID.
+2. If status is PENDING at payment gateway: wait for auto-reconciliation (up to 2 hours).
+3. If status is SUCCESS at payment gateway but not reflected in account: trigger manual reconciliation from CRM.
+4. If status is FAILED at gateway: inform customer the amount will be auto-refunded within 5-7 business days.
+
+Customer Communication:
+Send SMS update to customer once transaction status is determined. Do not ask customer to retry if status is still PENDING.
+
+Tags: transaction, processing, pending, payment, reconciliation, refund, stuck

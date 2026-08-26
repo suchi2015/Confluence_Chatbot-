@@ -1,0 +1,19 @@
+Title: Prepaid Balance Deducted Without Usage
+
+Problem:
+Customer reports main balance deducted even though no calls or data was used.
+
+Root Cause:
+Common causes include background app data consumption, active VAS (Value Added Services), or roaming charges if SIM was used outside home network.
+
+Resolution Steps:
+1. Pull usage CDR from CRM for the date range in question.
+2. Check active VAS subscriptions under customer profile.
+3. If VAS found, deactivate and apply a one-time reversal if charge was within 24 hours.
+4. Advise customer to check background data usage on device.
+5. If CDR shows no usage but balance still deducted, raise a billing discrepancy ticket.
+
+Reversal Policy:
+Balance reversal is allowed once per 90 days per account, for charges up to Rs 50.
+
+Tags: prepaid, balance, deducted, VAS, roaming, CDR, reversal

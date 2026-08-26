@@ -1,0 +1,20 @@
+Title: Incorrect Bill Amount - Customer Overcharged
+
+Problem:
+Customer disputes their bill stating the charged amount is higher than expected.
+
+Investigation Steps:
+1. Pull the itemized bill from CRM for the billing period in question.
+2. Compare plan charges, add-on charges, and usage charges against customer's plan details.
+3. Check for any one-time charges (device EMI, activation fees, late fees).
+4. Identify if any VAS or add-ons were activated without customer consent.
+
+Resolution:
+- If VAS activated without consent: deactivate immediately and raise a credit/reversal request.
+- If usage charges are correct but customer wasn't aware: explain the charges and provide bill breakdown.
+- If a system error caused overcharge: raise a billing correction ticket.
+
+Reversal SLA:
+Credit adjustments reflect within 24-48 hours. Confirm with customer and send SMS confirmation.
+
+Tags: billing, overcharge, invoice, bill dispute, VAS, credit, reversal

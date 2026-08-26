@@ -1,0 +1,22 @@
+Title: Calls Dropping in Specific Location
+
+Problem:
+Customer experiences repeated call drops in a specific building, locality, or area.
+
+Root Cause Analysis:
+- Poor indoor signal due to building material (thick concrete, metal).
+- Cell tower under maintenance or overloaded.
+- Dead zone — outside network coverage.
+
+Resolution Steps:
+1. Verify coverage for customer's pincode using the network coverage tool in CRM.
+2. Check for any active tower outages or maintenance in the area.
+3. Ask customer to try in a different spot (near window) to rule out building interference.
+4. Suggest enabling Wi-Fi Calling if the device supports it.
+5. If the area is a legitimate dead zone, log a coverage improvement request.
+
+Wi-Fi Calling Setup:
+Android: Settings > Connections > Wi-Fi Calling > Enable.
+iPhone: Settings > Phone > Wi-Fi Calling > Enable.
+
+Tags: call drop, network, coverage, signal, Wi-Fi calling, dead zone

@@ -1,0 +1,20 @@
+Title: Slow Internet Speed - 4G Showing But Speed is Low
+
+Problem:
+Customer's device shows 4G/LTE icon but actual download/upload speed is very slow (below 1 Mbps).
+
+Possible Causes:
+- Data plan exhausted — FUP (Fair Usage Policy) throttling active.
+- Network congestion in the customer's cell tower area.
+- Incorrect APN configuration.
+- Device-level issue (cache, settings).
+
+Resolution Steps:
+1. Check data balance — if FUP hit, advise customer to purchase a data add-on pack.
+2. Check tower congestion report for the customer's pincode.
+3. Ask customer to run a speed test at fast.com and share results.
+4. Guide APN reset: Settings > Reset Network Settings.
+5. Ask customer to restart the device and test again.
+6. If congestion is the cause, note the ticket and advise improvement expected within 24 hours.
+
+Tags: internet, slow, 4G, LTE, speed, FUP, throttling, APN, network

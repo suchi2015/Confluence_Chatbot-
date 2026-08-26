@@ -1,0 +1,23 @@
+Title: Prepaid SIM Showing No Service After Recharge
+
+Problem:
+Customer's prepaid SIM shows "No Service" immediately after a successful recharge.
+
+Possible Causes:
+- SIM provisioning delay after first-time recharge on a new SIM.
+- Network outage in the customer's area.
+- SIM activation pending due to KYC validation.
+- Incorrect APN settings on the handset.
+
+Resolution Steps:
+1. Confirm recharge is posted in CRM under customer account.
+2. Ask customer to toggle Airplane Mode OFF/ON and wait 2 minutes.
+3. Check network outage map for customer's pincode.
+4. Verify KYC status — if pending, escalate to KYC team.
+5. Guide customer to set correct APN: Settings > Mobile Networks > APN.
+6. If issue persists after 30 minutes, perform remote SIM refresh from CRM.
+
+Escalation:
+Escalate to Network Operations if remote SIM refresh fails.
+
+Tags: prepaid, SIM, no service, recharge, activation, KYC, APN

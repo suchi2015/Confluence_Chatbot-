@@ -1,0 +1,19 @@
+Title: Payment Deducted But Recharge Not Credited
+
+Problem:
+Customer made a payment but recharge was not credited to the account.
+
+Root Cause:
+This can occur due to payment gateway timeout, bank processing delays, or technical glitches during transaction processing.
+
+Solution Steps:
+1. Ask customer for transaction ID or payment screenshot.
+2. Check payment status in billing portal under Transactions > Pending.
+3. If payment shows SUCCESS at bank but not credited, raise a manual credit request via CRM > Billing > Manual Recharge.
+4. Inform customer — credit will reflect within 2-4 hours.
+5. If payment shows FAILED, ask customer to retry or use an alternate payment method.
+
+Escalation:
+If not resolved within 4 hours, escalate to Level 2 Billing Team with transaction ID and customer number.
+
+Tags: payment, recharge, prepaid, deducted, not credited, transaction failed

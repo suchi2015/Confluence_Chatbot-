@@ -1,0 +1,28 @@
+Title: Printer Not Working - Setup and Troubleshooting
+
+Problem:
+Employee cannot print documents. Printer shows offline, print jobs stuck in queue, or printer not found on network.
+
+Root Cause:
+Printer driver not installed, printer offline, or not connected to the correct network printer.
+
+Solution Steps:
+1. Check if printer is powered on and shows "Ready" status on its display.
+2. On Windows: Go to Settings > Devices > Printers & Scanners.
+3. Check if your office printer appears in the list.
+4. If not found, click "Add a printer or scanner" and wait for it to detect.
+5. If still not found, manually add: Click "The printer I want isn't listed"
+   - Select "Add a printer using TCP/IP address"
+   - Enter printer IP (check the label on the printer or ask IT)
+6. If printer shows "Offline":
+   - Right-click the printer > See what's printing
+   - Click Printer menu > Uncheck "Use Printer Offline"
+7. Clear stuck print queue:
+   - Open print queue > Select all jobs > Delete
+   - Then try printing again
+8. If driver missing, download from IT portal: http://itportal.company.com/drivers
+9. Restart the Print Spooler service:
+   - Press Win+R, type services.msc
+   - Find "Print Spooler" > Right-click > Restart
+
+Tags: printer, print, offline, driver, network printer, print queue, spooler

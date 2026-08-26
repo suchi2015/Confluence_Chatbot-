@@ -1,0 +1,20 @@
+Title: Postpaid Bill Shock - Usage Beyond Plan Limits
+
+Problem:
+Customer received a very high postpaid bill due to usage exceeding their plan's included limits.
+
+Common Triggers:
+- International roaming without add-on pack.
+- Excess data usage after FUP (charged at premium rate per MB).
+- Premium SMS services or IVR-based content subscriptions.
+
+Resolution Steps:
+1. Pull detailed CDR and identify the specific charges causing the spike.
+2. If roaming charges: check if customer was informed about roaming rates. If not, apply goodwill waiver (one-time, per policy).
+3. If data overage: check if alerts were sent at 80% and 100% data usage. If not sent (system failure), raise reversal request.
+4. Advise customer to enable spend limits or usage alerts going forward.
+
+Goodwill Waiver Limit:
+Waiver up to Rs 500 per account per year, requires supervisor approval above Rs 200.
+
+Tags: postpaid, bill shock, roaming, data overage, FUP, CDR, waiver, billing

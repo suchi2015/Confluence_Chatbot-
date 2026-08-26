@@ -1,0 +1,30 @@
+Title: Computer Running Slow - Performance Troubleshooting
+
+Problem:
+Employee's laptop or desktop is running very slowly, applications take long to open, or system freezes frequently.
+
+Root Cause:
+High CPU/RAM usage, too many startup programs, disk full, malware, or outdated drivers.
+
+Solution Steps:
+1. Check Task Manager first:
+   - Press Ctrl+Shift+Esc
+   - Look at CPU and Memory columns
+   - If any app using more than 80%, right-click > End Task
+2. Free up disk space:
+   - Open File Explorer > Right-click C: drive > Properties > Disk Cleanup
+   - Clean temporary files, recycle bin, etc.
+3. Disable startup programs:
+   - Task Manager > Startup tab
+   - Disable unnecessary programs (Teams, Spotify, etc. can be opened manually)
+4. Run Windows Update:
+   - Settings > Windows Update > Check for updates
+   - Pending updates can slow the system
+5. Run a malware scan:
+   - Open Windows Security > Virus & threat protection > Quick scan
+6. Check RAM usage:
+   - If consistently above 90%, request RAM upgrade from IT
+7. Restart the computer (not shutdown - actual restart clears memory properly)
+8. If problem continues, raise a ticket for hardware inspection.
+
+Tags: slow, performance, computer, laptop, cpu, memory, ram, hanging, freezing

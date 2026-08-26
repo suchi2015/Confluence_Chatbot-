@@ -1,0 +1,17 @@
+Title: Hotspot Not Working on Mobile Data
+
+Problem:
+Customer cannot use mobile hotspot or personal hotspot feature even though mobile data is working on the device.
+
+Possible Causes:
+- Hotspot/tethering blocked on the current plan.
+- Hotspot data quota exhausted (some plans have separate hotspot limits).
+- Device software issue.
+
+Resolution Steps:
+1. Check if customer's plan includes hotspot/tethering. Some budget plans restrict this feature.
+2. Verify hotspot data quota remaining via CRM or ask customer to check via *123#.
+3. If plan doesn't include hotspot, recommend plan upgrade or hotspot add-on pack.
+4. If plan includes hotspot and quota is available: guide device troubleshooting — toggle hotspot OFF/ON, restart device, check for OS update.
+
+Tags: hotspot, tethering, mobile data, Wi-Fi sharing, personal hotspot, data pack

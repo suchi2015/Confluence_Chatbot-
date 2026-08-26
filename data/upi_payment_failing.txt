@@ -1,0 +1,19 @@
+Title: UPI Payment Failing on MyOperator App
+
+Problem:
+Customer's UPI payment is failing when trying to recharge or pay bill through the app.
+
+Possible Causes:
+- UPI daily transaction limit reached.
+- Bank server downtime.
+- Incorrect UPI PIN entered 3 times (account temporarily locked by bank).
+- App-level payment gateway issue.
+
+Resolution Steps:
+1. Ask customer to try a different UPI app (GPay, PhonePe) to isolate if the issue is app-specific.
+2. Check if the customer's bank is listed in current payment gateway downtime alerts.
+3. Advise customer to check UPI transaction limit with their bank.
+4. If issue is app-specific, collect details and raise a bug report to the app team.
+5. Suggest alternate payment methods: debit/credit card, net banking, or offline recharge via store.
+
+Tags: UPI, payment, app, transaction, GPay, PhonePe, gateway, recharge

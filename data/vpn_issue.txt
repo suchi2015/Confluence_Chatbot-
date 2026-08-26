@@ -1,0 +1,20 @@
+Title: VPN Connection Issue - Troubleshooting Guide
+
+Problem:
+Employee is unable to connect to the company VPN. The VPN client shows error or connection times out.
+
+Root Cause:
+This usually happens due to incorrect VPN credentials, outdated VPN client, or firewall blocking the connection.
+
+Solution Steps:
+1. Check your internet connection first - open a browser and visit any website.
+2. Open the VPN client (Cisco AnyConnect or GlobalProtect).
+3. Make sure the server address is correct: vpn.company.com
+4. Re-enter your credentials - use your Windows login username and password.
+5. If still failing, go to Control Panel > Programs > Uninstall the VPN client.
+6. Download the latest VPN client from IT portal: http://itportal.company.com/vpn
+7. Reinstall and try connecting again.
+8. If issue persists, check Windows Firewall - temporarily disable and test.
+9. Contact IT helpdesk if none of the above steps work: helpdesk@company.com
+
+Tags: vpn, network, connection, remote access, cisco, globalprotect

@@ -1,0 +1,20 @@
+Title: International Roaming Not Activated
+
+Problem:
+Customer is traveling internationally but roaming service is not active on their number.
+
+Eligibility Check:
+- Account must have no outstanding bill beyond grace period.
+- Account must be active (not barred or suspended).
+- For prepaid: minimum balance requirement (typically Rs 200+).
+
+Activation Steps:
+1. Verify account eligibility in CRM.
+2. Activate International Roaming from CRM > Services > Roaming > Enable.
+3. Ask customer to toggle Airplane Mode OFF/ON after activation.
+4. Recommend purchasing an IR pack for the destination country to avoid high pay-per-use rates.
+
+Available IR Packs:
+Daily packs (Rs 149/day), Weekly packs (Rs 999 for 7 days), Country-specific packs available via app or store.
+
+Tags: roaming, international, ISD, activation, IR pack, travel
