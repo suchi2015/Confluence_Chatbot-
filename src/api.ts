@@ -1,7 +1,7 @@
 // api.ts — all backend calls in one place
 import axios from 'axios'
 
-const BASE = 'http://15.206.180.134:8000/'
+const BASE = '/confluence-api'
 
 export interface MatchedDoc {
   filename: string
