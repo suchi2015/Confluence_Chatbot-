@@ -1,0 +1,40 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@import "tailwindcss";
+
+* { font-family: 'Inter', sans-serif; box-sizing: border-box; }
+body { margin: 0; padding: 0; background: #f0f2f6; }
+
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-thumb { background: #dde3f0; border-radius: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+
+[contenteditable]:focus { outline: none; }
+[contenteditable]:empty:before { content: attr(data-placeholder); color: #c5cce8; pointer-events: none; }
+
+.page-content h1 { font-size: 1.5rem; font-weight: 700; margin: 1rem 0 0.5rem; color: #1e2235; }
+.page-content h2 { font-size: 1.15rem; font-weight: 600; margin: 1.25rem 0 0.5rem; color: #1e2235; border-bottom: 1px solid #eef0f7; padding-bottom: 0.25rem; }
+.page-content h3 { font-size: 1rem; font-weight: 600; margin: 1rem 0 0.4rem; color: #374151; }
+.page-content p { margin: 0.5rem 0; color: #374151; line-height: 1.7; font-size: 0.9rem; }
+.page-content ul { list-style: disc; padding-left: 1.5rem; margin: 0.5rem 0; color: #374151; font-size: 0.9rem; }
+.page-content ol { list-style: decimal; padding-left: 1.5rem; margin: 0.5rem 0; color: #374151; font-size: 0.9rem; }
+.page-content li { margin: 0.25rem 0; line-height: 1.6; }
+.page-content pre { background: #f3f4f9; border-radius: 6px; padding: 0.75rem 1rem; font-size: 0.85rem; overflow-x: auto; margin: 0.75rem 0; }
+.page-content code { background: #f3f4f9; border-radius: 3px; padding: 0.1rem 0.3rem; font-size: 0.85rem; }
+.page-content table { width: 100%; border-collapse: collapse; margin: 0.75rem 0; font-size: 0.875rem; }
+.page-content table th { background: #f3f4f9; font-weight: 600; color: #1e2235; padding: 0.5rem 0.75rem; border: 1px solid #dde3f0; text-align: left; }
+.page-content table td { padding: 0.5rem 0.75rem; border: 1px solid #dde3f0; color: #374151; }
+.page-content table tr:nth-child(even) { background: #fafbff; }
+.page-content blockquote { border-left: 3px solid #4f6ef7; padding: 0.5rem 1rem; background: #f5f6ff; margin: 0.75rem 0; border-radius: 0 6px 6px 0; color: #4b5563; }
+
+.editor-content h1 { font-size: 1.5rem; font-weight: 700; margin: 1rem 0 0.5rem; color: #1e2235; }
+.editor-content h2 { font-size: 1.15rem; font-weight: 600; margin: 1.25rem 0 0.5rem; color: #1e2235; border-bottom: 1px solid #eef0f7; padding-bottom: 0.25rem; }
+.editor-content h3 { font-size: 1rem; font-weight: 600; margin: 1rem 0 0.4rem; color: #374151; }
+.editor-content p { margin: 0.5rem 0; color: #374151; line-height: 1.7; font-size: 0.9rem; }
+.editor-content ul { list-style: disc; padding-left: 1.5rem; margin: 0.5rem 0; color: #374151; font-size: 0.9rem; }
+.editor-content ol { list-style: decimal; padding-left: 1.5rem; margin: 0.5rem 0; color: #374151; font-size: 0.9rem; }
+.editor-content li { margin: 0.25rem 0; line-height: 1.6; }
+.editor-content pre { background: #f3f4f9; border-radius: 6px; padding: 0.75rem 1rem; font-size: 0.85rem; overflow-x: auto; margin: 0.75rem 0; }
+.editor-content code { background: #f3f4f9; border-radius: 3px; padding: 0.1rem 0.3rem; font-size: 0.85rem; }
+.editor-content table { width: 100%; border-collapse: collapse; margin: 0.75rem 0; font-size: 0.875rem; }
+.editor-content table th { background: #f3f4f9; font-weight: 600; color: #1e2235; padding: 0.5rem 0.75rem; border: 1px solid #dde3f0; text-align: left; }
+.editor-content table td { padding: 0.5rem 0.75rem; border: 1px solid #dde3f0; color: #374151; }
