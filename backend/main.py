@@ -29,7 +29,13 @@ app = FastAPI(title="Confluence Chatbot API")
 # CORS — React dev server (localhost:5173) allow cheyyadam
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://localhost:3000"],
+    allow_origins=[
+        "http://localhost:5173",
+        "http://localhost:3000",
+        "http://15.206.180.134",
+        "http://15.206.180.134:80",
+        "*"   # dev lo anni allow cheyyadaniki
+    ],
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -118,20 +124,47 @@ def search_fast(req: SearchRequest):
 
 class AnswerRequest(BaseModel):
     query: str
-    context_docs: list[str]   # list of document contents
+    context_docs: list[str]
 
 
 @app.post("/generate-answer")
 def generate_answer_endpoint(req: AnswerRequest):
-    """
-    Separate endpoint for LLM answer generation.
-    Frontend calls this AFTER showing matched docs.
-    """
+    """Separate endpoint for LLM answer generation."""
     from chatbot import generate_answer
     if not req.context_docs:
         return {"answer": "No relevant documents found to generate an answer."}
     answer = generate_answer(req.query, req.context_docs)
     return {"answer": answer}
+
+
+class GeneralAnswerRequest(BaseModel):
+    query: str
+
+
+@app.post("/general-answer")
+def general_answer(req: GeneralAnswerRequest):
+    """
+    General AI answer — responds to any query using Ollama.
+    No KB context needed. Works for greetings, general questions, etc.
+    """
+    import ollama as ollama_lib
+    prompt = f"""You are a helpful AI assistant for a telecom support team's knowledge base.
+Answer the following question helpfully and concisely.
+If it's a greeting or casual message, respond naturally.
+If it's a technical question, give a clear answer.
+If you don't know, say so honestly.
+
+Question: {req.query}
+
+Answer:"""
+    try:
+        response = ollama_lib.chat(
+            model='llama3.2',
+            messages=[{"role": "user", "content": prompt}]
+        )
+        return {"answer": response['message']['content']}
+    except Exception as e:
+        return {"answer": f"I'm here to help! However, I couldn't process your request right now ({str(e)}). Please try again."}
 
 
 @app.post("/upload-query")

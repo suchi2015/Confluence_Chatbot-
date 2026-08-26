@@ -1,7 +1,7 @@
 # Vector DB
 chromadb>=0.6.0
 
-# Embeddings (ONNX based - no torch needed)    
+# Embeddings (ONNX based - no torch needed)   sentence-transformers==3.0.1  
 
 
 # Local LLM
