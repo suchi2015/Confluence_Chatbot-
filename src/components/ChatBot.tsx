@@ -18,8 +18,9 @@ type Tab = 'kb' | 'web'
 
 interface KBResult {
   docs:       MatchedDoc[]
-  kbAnswer:   string   // answer from KB context
-  aiAnswer:   string   // general AI answer (always present)
+  kbAnswer:   string
+  aiAnswer:   string
+  kbError:    string
 }
 
 interface WebResult {
@@ -51,34 +52,44 @@ async function fetchKBResults(query: string): Promise<KBResult> {
   let docs: MatchedDoc[] = []
   let kbAnswer = ''
   let aiAnswer = ''
+  let kbError  = ''
 
   try {
-    // Search KB
-    const searchRes = await axios.post<{ matched_docs: MatchedDoc[] }>(
-      `${BASE}/search-fast`, { query }
+    // Search KB — direct call with full error visibility
+    const searchRes = await axios.post(
+      `${BASE}/search-fast`,
+      { query },
+      { timeout: 10000 }
     )
-    docs = searchRes.data.matched_docs ?? []
+    docs = searchRes.data?.matched_docs ?? []
 
     // Generate KB-context answer if docs found
     if (docs.length > 0) {
       try {
-        const ansRes = await axios.post<{ answer: string }>(
+        const ansRes = await axios.post(
           `${BASE}/generate-answer`,
-          { query, context_docs: docs.map(d => d.content) }
+          { query, context_docs: docs.map((d: MatchedDoc) => d.content) },
+          { timeout: 60000 }
         )
-        kbAnswer = ansRes.data.answer ?? ''
+        kbAnswer = ansRes.data?.answer ?? ''
       } catch {
         kbAnswer = ''
       }
     }
-  } catch {
-    // Backend offline — docs stay empty
+  } catch (e: unknown) {
+    if (axios.isAxiosError(e)) {
+      kbError = e.code === 'ECONNREFUSED' || e.code === 'ERR_NETWORK'
+        ? 'backend-offline'
+        : `API error: ${e.response?.status ?? e.message}`
+    } else {
+      kbError = 'Search failed'
+    }
   }
 
-  // Always get a general AI answer
+  // Always get general AI answer regardless of KB result
   aiAnswer = await fetchGeneralAnswer(query)
 
-  return { docs, kbAnswer, aiAnswer }
+  return { docs, kbAnswer, aiAnswer, kbError }
 }
 
 // ── Web search via DuckDuckGo ─────────────────────────────────────────────────
@@ -307,11 +318,18 @@ export default function ChatBot() {
 
                       {kbDone && (
                         <>
+                          {/* Backend offline warning */}
+                          {kbResult!.kbError === 'backend-offline' && (
+                            <div className="bg-amber-50 border border-amber-200 rounded-xl px-3 py-2.5 text-xs text-amber-700">
+                              ⚠️ Backend is offline — showing AI response only. Start the FastAPI server to see matched documents.
+                            </div>
+                          )}
+
                           {/* Matched KB docs */}
                           {hasKBDocs && (
                             <div>
                               <p className="text-[0.65rem] font-semibold text-gray-400 uppercase tracking-wider mb-2">
-                                Matched Confluence Pages
+                                Matched Confluence Pages ({kbResult!.docs.length})
                               </p>
                               <div className="space-y-2">
                                 {kbResult!.docs.map((doc, i) => {
@@ -340,7 +358,15 @@ export default function ChatBot() {
                             </div>
                           )}
 
-                          {/* KB answer (if docs found) */}
+                          {/* No KB docs but backend online */}
+                          {!hasKBDocs && !kbResult!.kbError && (
+                            <div className="flex flex-col items-center py-4 gap-1.5 text-gray-400">
+                              <FileText size={22} />
+                              <p className="text-xs text-center">No matching pages found in knowledge base.</p>
+                            </div>
+                          )}
+
+                          {/* KB answer (only if docs found) */}
                           {kbResult!.kbAnswer && (
                             <div>
                               <p className="text-[0.65rem] font-semibold text-gray-400 uppercase tracking-wider mb-2">
