@@ -1,7 +1,9 @@
 // api.ts — all backend calls in one place
 import axios from 'axios'
 
-const BASE = '/confluence-api'
+// const BASE = '/confluence-api'
+const BASE = import.meta.env.VITE_API_URL ?? '/api'
+
 
 export interface MatchedDoc {
   filename: string
