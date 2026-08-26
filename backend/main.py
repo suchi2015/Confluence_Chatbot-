@@ -84,6 +84,17 @@ def search(req: SearchRequest):
     return result
 
 
+@app.get("/health")
+def health():
+    """Health check — also shows ChromaDB document count."""
+    try:
+        from chatbot import collection
+        count = collection.count()
+        return {"status": "ok", "chromadb_docs": count}
+    except Exception as e:
+        return {"status": "error", "detail": str(e)}
+
+
 @app.post("/search-fast")
 def search_fast(req: SearchRequest):
     """
@@ -98,7 +109,7 @@ def search_fast(req: SearchRequest):
     results = search_documents(req.query, top_k=5)
 
     matched_docs = []
-    MIN_SIMILARITY = 40.0
+    MIN_SIMILARITY = 30.0
 
     for i in range(len(results['documents'][0])):
         doc_content  = results['documents'][0][i]
