@@ -33,21 +33,53 @@ async function fetchGeneralAnswer(query: string): Promise<string> {
     const res = await axios.post<{ answer: string }>(`${BASE}/general-answer`, { query })
     return res.data.answer
   } catch {
-    const q = query.toLowerCase().trim()
-    if (q.includes('morning') || q.includes('afternoon') || q.includes('evening') || q.includes('night'))
-      return "Good " + (q.includes('morning') ? 'morning' : q.includes('afternoon') ? 'afternoon' : q.includes('evening') ? 'evening' : 'night') + "! 👋 I'm your AI assistant for telecom support. How can I help you today?"
-    if (q.includes('hello') || q.includes('hi') || q.includes('hey') || q === 'hai')
-      return "Hello! 👋 I'm your AI assistant for telecom support. How can I help you today?"
-    if (q.includes('how are you') || q.includes('how r u') || q.includes('hru'))
-      return "I'm doing great, thanks for asking! Ready to help with any telecom support issues. What's your question?"
-    if (q.includes('thank') || q.includes('thanks') || q.includes('ty'))
-      return "You're welcome! 😊 Feel free to ask if you have any other questions."
-    if (q.includes('bye') || q.includes('goodbye') || q.includes('see you'))
-      return "Goodbye! 👋 Come back anytime if you need help."
-    if (q.includes('help') || q.includes('what can you do'))
-      return "I can help you with:\n• Finding solutions in our knowledge base\n• Telecom issues: billing, recharge, network, SIM, roaming\n• Creating and updating confluence pages\n\nJust describe your problem!"
-    return "I'm here to help! Type your telecom support issue and I'll find the best solution from our knowledge base."
+    return _localGreetingResponse(query)
   }
+}
+
+function _localGreetingResponse(query: string): string {
+  const q = query.toLowerCase().trim()
+
+  if (q.includes('good morning') || q === 'morning' || q === 'gm')
+    return "Good morning! ☀️ Hope you're having a great day. How can I help you with telecom support today?"
+
+  if (q.includes('good afternoon') || q === 'afternoon')
+    return "Good afternoon! 🌤️ How can I assist you with telecom support today?"
+
+  if (q.includes('good evening') || q === 'evening')
+    return "Good evening! 🌙 What telecom issue can I help you resolve tonight?"
+
+  if (q.includes('good night') || q === 'gn')
+    return "Good night! 🌙 Rest well. Come back if you need support anytime."
+
+  if (q === 'hi' || q === 'hii' || q === 'hai' || q.startsWith('hi '))
+    return "Hi there! 👋 I'm your AI assistant for telecom support. What issue can I help you with?"
+
+  if (q === 'hello' || q.startsWith('hello '))
+    return "Hello! 😊 I'm here to help with any telecom support questions. What's your problem today?"
+
+  if (q === 'hey' || q.startsWith('hey '))
+    return "Hey! 👋 What can I help you with today?"
+
+  if (q.includes('how are you') || q.includes('how r u') || q === 'hru')
+    return "I'm doing great, thanks for asking! 😄 Ready to help you with any telecom support issues. What's your question?"
+
+  if (q.includes('thank') || q.includes('ty') || q.includes('thx'))
+    return "You're welcome! 😊 Don't hesitate to ask if you need more help."
+
+  if (q.includes('bye') || q.includes('see you') || q.includes('cya'))
+    return "Goodbye! 👋 Come back anytime if you need telecom support help."
+
+  if (q === 'ok' || q === 'okay' || q === 'k' || q === 'kk')
+    return "Got it! Let me know if you have any questions. 😊"
+
+  if (q === 'cool' || q === 'great' || q === 'nice' || q === 'awesome')
+    return "Glad to hear that! 😊 Anything else I can help you with?"
+
+  if (q.includes('help') || q.includes('what can you do'))
+    return "I can help you with:\n• Finding solutions in our knowledge base\n• Telecom issues: billing, recharge, network, SIM, roaming\n• Creating and updating confluence pages\n\nJust describe your problem!"
+
+  return "I'm here to help! 😊 Type your telecom support issue and I'll find the best solution."
 }
 
 // ── Detect if query is conversational (not a support issue) ──────────────────
@@ -143,27 +175,17 @@ async function fetchKBResults(query: string): Promise<KBResult> {
   return { docs, kbAnswer, aiAnswer, kbError }
 }
 
-// ── Web search via DuckDuckGo ─────────────────────────────────────────────────
+// ── Web search — through backend proxy (avoids CORS) ─────────────────────────
 async function fetchWebAnswer(query: string): Promise<string> {
   try {
-    const res = await fetch(
-      `https://api.duckduckgo.com/?q=${encodeURIComponent(query)}&format=json&no_redirect=1&no_html=1&skip_disambig=1`
-    )
-    const data = await res.json()
-    const parts: string[] = []
-    if (data.AbstractText) parts.push(data.AbstractText)
-    if (data.Answer)       parts.push(data.Answer)
-    if (data.RelatedTopics?.length > 0) {
-      const topics = (data.RelatedTopics as { Text?: string }[])
-        .filter(t => t.Text).slice(0, 4)
-        .map((t, i) => `${i + 1}. ${t.Text}`)
-      if (topics.length) parts.push('\nRelated:\n' + topics.join('\n'))
-    }
-    if (parts.length === 0)
-      return `No instant answer found for "${query}". Try searching on Google or checking official documentation.`
-    return parts.join('\n\n')
+    // Call our FastAPI backend which proxies to DuckDuckGo
+    const res = await axios.get(`${BASE}/web-search`, {
+      params: { q: query },
+      timeout: 10000
+    })
+    return res.data?.answer ?? `No results found for "${query}".`
   } catch {
-    return `Web search is unavailable right now. Please try Google for "${query}".`
+    return `Web search unavailable. Please try Google for "${query}".`
   }
 }
 
