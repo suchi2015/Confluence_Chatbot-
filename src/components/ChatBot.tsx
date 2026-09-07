@@ -33,35 +33,68 @@ async function fetchGeneralAnswer(query: string): Promise<string> {
     const res = await axios.post<{ answer: string }>(`${BASE}/general-answer`, { query })
     return res.data.answer
   } catch {
-    // Fallback: simple rule-based responses for common queries
-    const q = query.toLowerCase()
-    if (q.includes('hello') || q.includes('hi') || q.includes('hey'))
-      return "Hello! I'm your AI assistant for telecom support. How can I help you today?"
-    if (q.includes('how are you') || q.includes('how r u'))
-      return "I'm doing great, thanks for asking! I'm here to help you with any telecom support issues. What's your question?"
-    if (q.includes('thank') || q.includes('thanks'))
-      return "You're welcome! Feel free to ask if you have any other questions."
-    if (q.includes('what can you do') || q.includes('help'))
-      return "I can help you with:\n• Finding solutions in our knowledge base\n• Answering telecom support questions\n• Helping with billing, network, recharge, and device issues\n• Creating and updating confluence pages\n\nJust type your problem!"
-    return `I understand you're asking about "${query}". While I couldn't find a specific answer, I recommend checking the Knowledge Base tab or using Web Search for more information. You can also try rephrasing your question.`
+    const q = query.toLowerCase().trim()
+    if (q.includes('morning') || q.includes('afternoon') || q.includes('evening') || q.includes('night'))
+      return "Good " + (q.includes('morning') ? 'morning' : q.includes('afternoon') ? 'afternoon' : q.includes('evening') ? 'evening' : 'night') + "! 👋 I'm your AI assistant for telecom support. How can I help you today?"
+    if (q.includes('hello') || q.includes('hi') || q.includes('hey') || q === 'hai')
+      return "Hello! 👋 I'm your AI assistant for telecom support. How can I help you today?"
+    if (q.includes('how are you') || q.includes('how r u') || q.includes('hru'))
+      return "I'm doing great, thanks for asking! Ready to help with any telecom support issues. What's your question?"
+    if (q.includes('thank') || q.includes('thanks') || q.includes('ty'))
+      return "You're welcome! 😊 Feel free to ask if you have any other questions."
+    if (q.includes('bye') || q.includes('goodbye') || q.includes('see you'))
+      return "Goodbye! 👋 Come back anytime if you need help."
+    if (q.includes('help') || q.includes('what can you do'))
+      return "I can help you with:\n• Finding solutions in our knowledge base\n• Telecom issues: billing, recharge, network, SIM, roaming\n• Creating and updating confluence pages\n\nJust describe your problem!"
+    return "I'm here to help! Type your telecom support issue and I'll find the best solution from our knowledge base."
   }
 }
 
 // ── Detect if query is conversational (not a support issue) ──────────────────
 function isConversational(query: string): boolean {
   const q = query.toLowerCase().trim()
-  const greetings = [
-    'hi', 'hello', 'hey', 'hii', 'helo', 'hola',
-    'good morning', 'good afternoon', 'good evening', 'good night',
-    'how are you', 'how r u', 'howdy', 'sup', 'wassup',
-    'thank you', 'thanks', 'thank u', 'thnks', 'thx',
-    'bye', 'goodbye', 'see you', 'see ya', 'cya',
-    'ok', 'okay', 'cool', 'nice', 'great', 'awesome',
-    'what can you do', 'who are you', 'what are you',
+
+  // Exact conversational words/phrases
+  const exactMatches = new Set([
+    'hi', 'hey', 'hello', 'hii', 'hiii', 'helo', 'holla', 'hola', 'hai',
+    'morning', 'good morning', 'gm', 'g morning',
+    'afternoon', 'good afternoon', 'good evening', 'good night', 'gn',
+    'how are you', 'how r u', 'how are u', 'hru', 'how you doing',
+    'sup', 'wassup', 'whats up', "what's up", 'yo',
+    'thanks', 'thank you', 'thank u', 'thnks', 'thx', 'ty', 'tysm',
+    'ok', 'okay', 'k', 'kk', 'cool', 'nice', 'great', 'awesome', 'alright',
+    'bye', 'goodbye', 'good bye', 'see you', 'see ya', 'cya', 'later', 'tc',
+    'who are you', 'what are you', 'what can you do',
     'help', 'help me',
+    'yes', 'no', 'maybe', 'sure', 'fine',
+    'lol', 'haha', 'hehe', ':)', ':D', '👍',
+  ])
+
+  // Check exact match
+  if (exactMatches.has(q)) return true
+
+  // Check if query starts with a greeting word (e.g. "hi there", "hello sir")
+  const greetingPrefixes = [
+    'hi ', 'hey ', 'hello ', 'hii ', 'helo ',
+    'good morning', 'good afternoon', 'good evening', 'good night',
+    'morning ', 'thanks ', 'thank you', 'bye ', 'howdy',
   ]
-  // Exact match or starts with greeting word
-  return greetings.some(g => q === g || q.startsWith(g + ' ') || q.startsWith(g + '!') || q.startsWith(g + ','))
+  if (greetingPrefixes.some(p => q.startsWith(p))) return true
+
+  // Very short queries (1-2 words) that are unlikely to be support questions
+  const words = q.split(/\s+/).filter(Boolean)
+  if (words.length <= 2) {
+    // But allow short technical queries
+    const technicalWords = [
+      'vpn', 'sim', 'otp', 'kyc', 'mnp', 'upi', '4g', '5g', 'lte',
+      'wifi', 'data', 'bill', 'sms', 'call', 'net', 'signal',
+      'recharge', 'balance', 'payment', 'network', 'login',
+    ]
+    const hasTechnical = words.some(w => technicalWords.includes(w))
+    if (!hasTechnical && words.every(w => w.length < 8)) return true
+  }
+
+  return false
 }
 
 // ── KB search + AI answer ─────────────────────────────────────────────────────
