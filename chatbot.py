@@ -1,97 +1,107 @@
 # chatbot.py
-# ---------------------------------------------------------------------------
-# PURPOSE: User query ki related documents search cheyyadam + answer generate
-#
-# CHANGE: sentence-transformers బదులు ChromaDB built-in ONNX embedding use
-#         torch DLL block avoid cheyyadaniki
-#
-# Flow:
-#   query (text) → ChromaDB ONNX embed → search → matched docs → LLM → answer
-# ---------------------------------------------------------------------------
-
 import os
 
-# ChromaDB telemetry (gRPC) disable
 os.environ["ANONYMIZED_TELEMETRY"] = "False"
-os.environ["CHROMA_TELEMETRY"] = "False"
+os.environ["CHROMA_TELEMETRY"]     = "False"
 
 import chromadb
 from chromadb.utils.embedding_functions import ONNXMiniLM_L6_V2
-import ollama
 
-# ---------------------------------------------------------------------------
-# Models and DB load cheyyadam
-# Ivi oka sari load avutai (app start ainapudu)
-# ---------------------------------------------------------------------------
+# ── LLM Configuration ────────────────────────────────────────────────────────
+# Priority: OpenAI API key > Qwen vLLM server > Ollama local/remote
+OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "")
+QWEN_API_URL   = os.environ.get("QWEN_API_URL", "")   # e.g. http://1.2.3.4:8000/v1
+QWEN_MODEL     = os.environ.get("QWEN_MODEL", "Qwen/Qwen2.5-7B-Instruct-AWQ")
+OLLAMA_HOST    = os.environ.get("OLLAMA_HOST", "http://localhost:11434")
+
+def _call_llm(prompt: str) -> str:
+    """
+    LLM call with priority:
+    1. OpenAI (if OPENAI_API_KEY set)
+    2. Qwen vLLM server (if QWEN_API_URL set)  ← your server
+    3. Ollama local/remote fallback
+    """
+
+    # ── Option 1: OpenAI ──────────────────────────────────────────────────
+    if OPENAI_API_KEY:
+        try:
+            from openai import OpenAI
+            client = OpenAI(api_key=OPENAI_API_KEY)
+            resp = client.chat.completions.create(
+                model="gpt-3.5-turbo",
+                messages=[{"role": "user", "content": prompt}],
+                max_tokens=800,
+                temperature=0.3
+            )
+            return resp.choices[0].message.content or ""
+        except Exception as e:
+            print(f"OpenAI error: {e}")
+
+    # ── Option 2: Qwen vLLM server (OpenAI-compatible API) ───────────────
+    if QWEN_API_URL:
+        try:
+            from openai import OpenAI
+            # vLLM serves OpenAI-compatible API — same client, different base_url
+            client = OpenAI(
+                api_key="EMPTY",        # vLLM needs any non-empty string
+                base_url=QWEN_API_URL   # e.g. http://SERVER_IP:PORT/v1
+            )
+            resp = client.chat.completions.create(
+                model=QWEN_MODEL,
+                messages=[{"role": "user", "content": prompt}],
+                max_tokens=800,
+                temperature=0.3
+            )
+            return resp.choices[0].message.content or ""
+        except Exception as e:
+            print(f"Qwen vLLM error: {e}, falling back to Ollama")
+
+    # ── Option 3: Ollama (local or remote) ───────────────────────────────
+    import ollama
+    client = ollama.Client(host=OLLAMA_HOST)
+    resp = client.chat(
+        model='llama3.2',
+        messages=[{"role": "user", "content": prompt}]
+    )
+    return resp['message']['content']
+
+# ── ChromaDB setup ────────────────────────────────────────────────────────────
 print("Loading chatbot components...")
-embedding_fn = ONNXMiniLM_L6_V2()
+embedding_fn  = ONNXMiniLM_L6_V2()
 chroma_client = chromadb.PersistentClient(path="./chroma_db")
-collection = chroma_client.get_or_create_collection(
+collection    = chroma_client.get_or_create_collection(
     name="confluence_docs",
     embedding_function=embedding_fn
 )
 print("Chatbot ready!")
 
-
-def search_documents(query: str, top_k: int = 3):
-    """
-    User query ki most similar documents find chestundi.
-
-    HOW IT WORKS:
-    1. Query text ni ChromaDB ONNX embedding ga convert chestundi
-    2. ChromaDB lo stored document embeddings tho compare chestundi
-    3. Most similar top_k documents return chestundi
-
-    Args:
-        query: User typed problem (text)
-        top_k: Enni documents return cheyyali (default 3)
-
-    Returns:
-        results: ChromaDB query results
-    """
-    # ChromaDB query_texts use chestam - auto embed chestundi
-    # query_embeddings manually pass cheyyatledu - ChromaDB itself chestundi
-    results = collection.query(
-        query_texts=[query],   # text pass chestam, embedding_fn auto convert chestundi
+# ── Search ────────────────────────────────────────────────────────────────────
+def search_documents(query: str, top_k: int = 5):
+    return collection.query(
+        query_texts=[query],
         n_results=top_k,
         include=["documents", "distances", "metadatas"]
     )
 
-    return results
-
-
+# ── Generate answer from KB context ──────────────────────────────────────────
 def generate_answer(query: str, context_documents: list) -> str:
-    """
-    Matched documents ni context ga use chesi LLM tho answer generate cheyyadam.
-    """
     context = "\n\n---\n\n".join(context_documents)
+    prompt  = f"""You are an IT support assistant. Use ONLY the context below to answer.
+Give a clear, step-by-step structured answer.
 
-    prompt = f"""You are an IT support assistant. Use ONLY the information provided in the context below to answer the user's problem. 
-Do not make up information. Give a clear, step-by-step structured answer.
-
-CONTEXT FROM KNOWLEDGE BASE:
+CONTEXT:
 {context}
 
 USER PROBLEM:
 {query}
 
-Provide a helpful, structured answer with numbered steps if applicable:"""
+Answer:"""
+    return _call_llm(prompt)
 
-    response = ollama.chat(
-        model='llama3.2',
-        messages=[{"role": "user", "content": prompt}]
-    )
-    return response['message']['content']
-
-
+# ── Generate improved version of existing page ────────────────────────────────
 def generate_updated_page(query: str, original_content: str, ai_answer: str) -> str:
-    """
-    Existing document content + AI answer ni combine chesi better formatted
-    confluence page generate cheyyadam.
-    """
-    prompt = f"""You are a technical documentation writer. 
-Rewrite and improve the following confluence/knowledge base document by incorporating the new AI-generated answer.
-Keep the original structure but enhance it with the new solution steps. Format it professionally.
+    prompt = f"""You are a technical documentation writer.
+Rewrite and improve the following document. Keep original structure, enhance with new insights.
 
 ORIGINAL DOCUMENT:
 {original_content}
@@ -99,60 +109,34 @@ ORIGINAL DOCUMENT:
 NEW AI ANSWER TO INCORPORATE:
 {ai_answer}
 
-USER QUERY THAT TRIGGERED THIS:
+USER QUERY:
 {query}
 
-Generate an improved, well-formatted document that combines the original content with the new insights.
-Use clear sections: Title, Problem, Root Cause, Solution Steps, Additional Notes.
-Do NOT use markdown headers (##). Use plain text with clear labels like "Title:", "Problem:", etc."""
+Generate improved document with sections: Title, Problem, Root Cause, Solution Steps, Additional Notes.
+Use plain text labels (no ## markdown headers)."""
+    return _call_llm(prompt)
 
-    response = ollama.chat(
-        model='llama3.2',
-        messages=[{"role": "user", "content": prompt}]
-    )
-    return response['message']['content']
-
-
+# ── Generate new confluence page ──────────────────────────────────────────────
 def generate_new_page(query: str, ai_answer: str) -> str:
-    """
-    New problem ki structured confluence page generate cheyyadam.
-    """
-    prompt = f"""You are a technical documentation writer for a company's knowledge base (like Confluence).
-Create a well-structured knowledge base document for the following new problem/topic.
+    prompt = f"""You are a technical documentation writer for a company knowledge base.
+Create a structured knowledge base document for this problem.
 
 USER PROBLEM/TOPIC:
 {query}
 
-AI GENERATED SOLUTION:
+AI SOLUTION:
 {ai_answer}
 
-Generate a complete, professional knowledge base document with these sections:
-- Title: (descriptive title)
-- Problem: (description of the issue)
-- Root Cause: (why this happens)
-- Solution Steps: (numbered steps)
-- Additional Notes: (tips, warnings, contacts)
-- Tags: (relevant keywords)
+Generate document with sections: Title, Problem, Root Cause, Solution Steps, Additional Notes, Tags.
+Use plain text labels. No markdown headers."""
+    return _call_llm(prompt)
 
-Do NOT use markdown headers (##). Use plain text with clear labels.
-Make it comprehensive and easy to follow."""
-
-    response = ollama.chat(
-        model='llama3.2',
-        messages=[{"role": "user", "content": prompt}]
-    )
-    return response['message']['content']
-
-
+# ── File operations ───────────────────────────────────────────────────────────
 def save_updated_document(filepath: str, new_content: str):
-    """Existing file ni new content tho update cheyyadam."""
     with open(filepath, "w", encoding="utf-8") as f:
         f.write(new_content)
 
-
 def save_new_document(filename: str, content: str) -> str:
-    """New document ni data/ folder lo save cheyyadam. Returns filepath."""
-    # filename safe ga cheyyadam
     safe_name = filename.replace(" ", "_").lower()
     if not safe_name.endswith(".txt"):
         safe_name += ".txt"
@@ -161,121 +145,49 @@ def save_new_document(filename: str, content: str) -> str:
         f.write(content)
     return filepath
 
-
 def reingest_document(filepath: str, filename: str):
-    """
-    New/updated document ni ChromaDB lo re-index cheyyadam.
-    Ingest.py logic ikkade repeat chestunnam.
-    """
     with open(filepath, "r", encoding="utf-8") as f:
         content = f.read()
-
     collection.upsert(
         documents=[content],
         ids=[filename],
         metadatas={"filename": filename, "filepath": filepath}
     )
 
-
-# def process_query(query: str):
-#     """
-#     Main function - query vastundi, full result return chestundi.
-
-#     Returns:
-#         dict with:
-#             - answer: LLM generated answer
-#             - matched_docs: list of matched document info
-#     """
-
-#     # Step 1: Similar documents search
-#     results = search_documents(query, top_k=3)
-
-#     # Step 2: Results organize cheyyadam
-#     matched_docs = []
-#     documents_for_context = []
-
-#     for i in range(len(results['documents'][0])):
-#         doc_content = results['documents'][0][i]
-#         doc_metadata = results['metadatas'][0][i]
-#         distance = results['distances'][0][i]
-#         # distance 0 = perfect match, higher = less similar
-#         # percentage ga convert: max distance ~2 assume chestam
-#         similarity_score = round(max(0, (1 - distance / 2) * 100), 1)
-
-#         matched_docs.append({
-#             "filename": doc_metadata['filename'],
-#             "filepath": doc_metadata['filepath'],
-#             "content": doc_content,
-#             "score": similarity_score
-#         })
-#         documents_for_context.append(doc_content)
-
-#     # Step 3: LLM answer generate
-#     answer = generate_answer(query, documents_for_context)
-
-#     return {
-#         "answer": answer,
-#         "matched_docs": matched_docs
-#     }
-
-
+# ── Main query function ───────────────────────────────────────────────────────
 def process_query(query: str):
-    """
-    Main function - query vastundi, full result return chestundi.
-
-    Only documents with 65% or higher similarity
-    will be shown and passed to the LLM.
-    """
-
-    # Step 1: Similar documents search - top 5 lo search cheyyadam
-    results = search_documents(query, top_k=5)
-
-    # Step 2: Results organize cheyyadam
+    results      = search_documents(query, top_k=5)
     matched_docs = []
-    documents_for_context = []
-
-    # Minimum similarity required - lowered to 40% to show more relevant results
-    MIN_SIMILARITY = 40.0
+    context_docs = []
+    MIN_SCORE    = 40.0
 
     for i in range(len(results['documents'][0])):
-        doc_content = results['documents'][0][i]
-        doc_metadata = results['metadatas'][0][i]
+        content  = results['documents'][0][i]
+        meta     = results['metadatas'][0][i]
         distance = results['distances'][0][i]
+        score    = round(max(0, (1 - distance / 2) * 100), 1)
 
-        # Distance ni similarity percentage ga convert cheyyadam
-        similarity_score = round(
-            max(0, (1 - distance / 2) * 100),
-            1
-        )
-
-        # Only 65% or above documents accept cheyyadam
-        if similarity_score >= MIN_SIMILARITY:
-
+        if score >= MIN_SCORE:
             matched_docs.append({
-                "filename": doc_metadata['filename'],
-                "filepath": doc_metadata['filepath'],
-                "content": doc_content,
-                "score": similarity_score
+                "filename": meta['filename'],
+                "filepath": meta['filepath'],
+                "content":  content,
+                "score":    score
             })
+            context_docs.append(content)
 
-            documents_for_context.append(doc_content)
-
-    # Step 3: Relevant documents dorakakapothe
-    if not documents_for_context:
+    if not context_docs:
         return {
-            "answer": "Sorry, I could not find any relevant information in the Knowledge Base.",
-            "matched_docs": []
+            "answer":         "Sorry, no relevant information found in the Knowledge Base.",
+            "matched_docs":   [],
+            "has_good_match": False,
+            "query":          query
         }
 
-    # Step 4: Only 65%+ matched documents ni LLM ki pampadam
-    answer = generate_answer(
-        query,
-        documents_for_context
-    )
-
+    answer = generate_answer(query, context_docs)
     return {
-        "answer": answer,
-        "matched_docs": matched_docs,
+        "answer":         answer,
+        "matched_docs":   matched_docs,
         "has_good_match": len(matched_docs) > 0,
-        "query": query
+        "query":          query
     }

@@ -154,29 +154,18 @@ def generate_answer_endpoint(req: AnswerRequest):
 
 @app.post("/general-answer")
 def general_answer(req: GeneralAnswerRequest):
-    """
-    General AI answer — responds to any query using Ollama.
-    Falls back to smart rule-based responses if Ollama is offline.
-    """
-    import ollama as ollama_lib
-
-    prompt = f"""You are a helpful AI assistant for a telecom support team's knowledge base.
+    """General AI answer — uses OpenAI if key set, else Ollama, else fallback."""
+    from chatbot import _call_llm
+    prompt = f"""You are a helpful AI assistant for a telecom support team.
 Answer the following question helpfully and concisely.
-If it's a greeting or casual message, respond naturally.
-If it's a technical question, give a clear structured answer.
+If it's a greeting, respond naturally. If technical, give a clear answer.
 
 Question: {req.query}
 
 Answer:"""
-
     try:
-        response = ollama_lib.chat(
-            model='llama3.2',
-            messages=[{"role": "user", "content": prompt}]
-        )
-        return {"answer": response['message']['content']}
+        return {"answer": _call_llm(prompt)}
     except Exception:
-        # Ollama offline — smart fallback responses
         return {"answer": _fallback_answer(req.query)}
 
 

@@ -1,10 +1,11 @@
 # Vector DB
 chromadb>=0.6.0
 
-# Embeddings (ONNX based - no torch needed)   sentence-transformers==3.0.1  
+# Embeddings (ONNX - no torch needed)
+sentence-transformers==3.0.1
 
-
-# Local LLM
+# LLM - OpenAI (primary) or Ollama (fallback)
+openai>=1.0.0
 ollama==0.3.0
 
 # FastAPI backend
