@@ -1,4 +1,5 @@
-# chatbot.py
+# chatbot.py — LLM-free version
+# Only ChromaDB vector search — no Ollama, no OpenAI needed
 import os
 
 os.environ["ANONYMIZED_TELEMETRY"] = "False"
@@ -6,66 +7,6 @@ os.environ["CHROMA_TELEMETRY"]     = "False"
 
 import chromadb
 from chromadb.utils.embedding_functions import ONNXMiniLM_L6_V2
-from dotenv import load_dotenv
-load_dotenv()
-
-# ── LLM Configuration ────────────────────────────────────────────────────────
-# Priority: OpenAI API key > Qwen vLLM server > Ollama local/remote
-OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "")
-QWEN_API_URL   = os.environ.get("QWEN_API_URL", "")   # e.g. http://1.2.3.4:8000/v1
-QWEN_MODEL     = os.environ.get("QWEN_MODEL", "Qwen/Qwen2.5-7B-Instruct-AWQ")
-OLLAMA_HOST    = os.environ.get("OLLAMA_HOST", "http://localhost:11434")
-
-def _call_llm(prompt: str) -> str:
-    """
-    LLM call with priority:
-    1. OpenAI (if OPENAI_API_KEY set)
-    2. Qwen vLLM server (if QWEN_API_URL set)  ← your server
-    3. Ollama local/remote fallback
-    """
-
-    # ── Option 1: OpenAI ──────────────────────────────────────────────────
-    if OPENAI_API_KEY:
-        try:
-            from openai import OpenAI
-            client = OpenAI(api_key=OPENAI_API_KEY)
-            resp = client.chat.completions.create(
-                model="gpt-3.5-turbo",
-                messages=[{"role": "user", "content": prompt}],
-                max_tokens=800,
-                temperature=0.3
-            )
-            return resp.choices[0].message.content or ""
-        except Exception as e:
-            print(f"OpenAI error: {e}")
-
-    # ── Option 2: Qwen vLLM server (OpenAI-compatible API) ───────────────
-    if QWEN_API_URL:
-        try:
-            from openai import OpenAI
-            # vLLM serves OpenAI-compatible API — same client, different base_url
-            client = OpenAI(
-                api_key="EMPTY",        # vLLM needs any non-empty string
-                base_url=QWEN_API_URL   # e.g. http://SERVER_IP:PORT/v1
-            )
-            resp = client.chat.completions.create(
-                model=QWEN_MODEL,
-                messages=[{"role": "user", "content": prompt}],
-                max_tokens=800,
-                temperature=0.3
-            )
-            return resp.choices[0].message.content or ""
-        except Exception as e:
-            print(f"Qwen vLLM error: {e}, falling back to Ollama")
-
-    # ── Option 3: Ollama (local or remote) ───────────────────────────────
-    import ollama
-    client = ollama.Client(host=OLLAMA_HOST)
-    resp = client.chat(
-        model='llama3.2',
-        messages=[{"role": "user", "content": prompt}]
-    )
-    return resp['message']['content']
 
 # ── ChromaDB setup ────────────────────────────────────────────────────────────
 print("Loading chatbot components...")
@@ -75,7 +16,7 @@ collection    = chroma_client.get_or_create_collection(
     name="confluence_docs",
     embedding_function=embedding_fn
 )
-print("Chatbot ready!")
+print("Chatbot ready! (LLM-free mode)")
 
 # ── Search ────────────────────────────────────────────────────────────────────
 def search_documents(query: str, top_k: int = 5):
@@ -85,58 +26,96 @@ def search_documents(query: str, top_k: int = 5):
         include=["documents", "distances", "metadatas"]
     )
 
-# ── Generate answer from KB context ──────────────────────────────────────────
+# ── Extract structured content from document text ────────────────────────────
+def extract_answer_from_doc(content: str, query: str) -> str:
+    """
+    LLM lekundane document content ni structured ga present cheyyadam.
+    Solution Steps section find chesi return chestundi.
+    """
+    lines = content.split('\n')
+
+    # Try to find Solution Steps section
+    solution_lines = []
+    in_solution = False
+
+    for line in lines:
+        line_lower = line.lower().strip()
+
+        # Solution section start detect
+        if any(k in line_lower for k in ['solution', 'resolution', 'fix', 'steps', 'how to']):
+            in_solution = True
+            solution_lines.append(line)
+            continue
+
+        # Stop at next major section
+        if in_solution and line.strip() and line_lower.endswith(':') and len(line.strip()) < 40:
+            if line_lower not in ['solution steps:', 'resolution steps:', 'solution:']:
+                break
+
+        if in_solution:
+            solution_lines.append(line)
+
+    if solution_lines:
+        return '\n'.join(solution_lines).strip()
+
+    # Fallback: return first 500 chars of content
+    clean = '\n'.join(l for l in lines if l.strip())
+    return clean[:600] + ('...' if len(clean) > 600 else '')
+
+
+# ── Generate answer — no LLM, uses document content directly ─────────────────
 def generate_answer(query: str, context_documents: list) -> str:
-    context = "\n\n---\n\n".join(context_documents)
-    prompt  = f"""You are an IT support assistant. Use ONLY the context below to answer.
-Give a clear, step-by-step structured answer.
+    """
+    LLM call cheyyadam ledu.
+    Top matched document nundi Solution Steps extract chesi return chestundi.
+    """
+    if not context_documents:
+        return "No relevant information found in the Knowledge Base."
 
-CONTEXT:
-{context}
+    # Use top document
+    top_doc = context_documents[0]
+    answer  = extract_answer_from_doc(top_doc, query)
 
-USER PROBLEM:
-{query}
+    # If multiple docs, mention them
+    if len(context_documents) > 1:
+        answer += f"\n\n(Based on {len(context_documents)} matched knowledge base articles)"
 
-Answer:"""
-    return _call_llm(prompt)
+    return answer
 
-# ── Generate improved version of existing page ────────────────────────────────
+
+# ── Stub functions (no LLM — return template-based responses) ─────────────────
 def generate_updated_page(query: str, original_content: str, ai_answer: str) -> str:
-    prompt = f"""You are a technical documentation writer.
-Rewrite and improve the following document. Keep original structure, enhance with new insights.
+    """Returns original content — no LLM to improve it."""
+    return original_content
 
-ORIGINAL DOCUMENT:
-{original_content}
 
-NEW AI ANSWER TO INCORPORATE:
-{ai_answer}
-
-USER QUERY:
-{query}
-
-Generate improved document with sections: Title, Problem, Root Cause, Solution Steps, Additional Notes.
-Use plain text labels (no ## markdown headers)."""
-    return _call_llm(prompt)
-
-# ── Generate new confluence page ──────────────────────────────────────────────
 def generate_new_page(query: str, ai_answer: str) -> str:
-    prompt = f"""You are a technical documentation writer for a company knowledge base.
-Create a structured knowledge base document for this problem.
+    """Returns a blank template — user fills it in."""
+    return f"""Title: {query[:80]}
 
-USER PROBLEM/TOPIC:
-{query}
+Problem:
+Describe the issue here.
 
-AI SOLUTION:
-{ai_answer}
+Root Cause:
+Explain why this happens.
 
-Generate document with sections: Title, Problem, Root Cause, Solution Steps, Additional Notes, Tags.
-Use plain text labels. No markdown headers."""
-    return _call_llm(prompt)
+Solution Steps:
+1. Step one
+2. Step two
+3. Step three
+
+Additional Notes:
+Add any warnings, escalation contacts, or tips here.
+
+Tags: {', '.join(query.split()[:5])}
+"""
+
 
 # ── File operations ───────────────────────────────────────────────────────────
 def save_updated_document(filepath: str, new_content: str):
     with open(filepath, "w", encoding="utf-8") as f:
         f.write(new_content)
+
 
 def save_new_document(filename: str, content: str) -> str:
     safe_name = filename.replace(" ", "_").lower()
@@ -147,6 +126,7 @@ def save_new_document(filename: str, content: str) -> str:
         f.write(content)
     return filepath
 
+
 def reingest_document(filepath: str, filename: str):
     with open(filepath, "r", encoding="utf-8") as f:
         content = f.read()
@@ -155,6 +135,7 @@ def reingest_document(filepath: str, filename: str):
         ids=[filename],
         metadatas={"filename": filename, "filepath": filepath}
     )
+
 
 # ── Main query function ───────────────────────────────────────────────────────
 def process_query(query: str):
@@ -180,13 +161,15 @@ def process_query(query: str):
 
     if not context_docs:
         return {
-            "answer":         "Sorry, no relevant information found in the Knowledge Base.",
+            "answer":         "No relevant documents found. Try different keywords.",
             "matched_docs":   [],
             "has_good_match": False,
             "query":          query
         }
 
+    # Extract answer from document content — no LLM
     answer = generate_answer(query, context_docs)
+
     return {
         "answer":         answer,
         "matched_docs":   matched_docs,

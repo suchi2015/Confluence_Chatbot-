@@ -154,19 +154,8 @@ def generate_answer_endpoint(req: AnswerRequest):
 
 @app.post("/general-answer")
 def general_answer(req: GeneralAnswerRequest):
-    """General AI answer — uses OpenAI if key set, else Ollama, else fallback."""
-    from chatbot import _call_llm
-    prompt = f"""You are a helpful AI assistant for a telecom support team.
-Answer the following question helpfully and concisely.
-If it's a greeting, respond naturally. If technical, give a clear answer.
-
-Question: {req.query}
-
-Answer:"""
-    try:
-        return {"answer": _call_llm(prompt)}
-    except Exception:
-        return {"answer": _fallback_answer(req.query)}
+    """General response — no LLM, rule-based fallback only."""
+    return {"answer": _fallback_answer(req.query)}
 
 
 def _fallback_answer(query: str) -> str:
