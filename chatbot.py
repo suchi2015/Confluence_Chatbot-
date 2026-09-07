@@ -6,6 +6,8 @@ os.environ["CHROMA_TELEMETRY"]     = "False"
 
 import chromadb
 from chromadb.utils.embedding_functions import ONNXMiniLM_L6_V2
+from dotenv import load_dotenv
+load_dotenv()
 
 # ── LLM Configuration ────────────────────────────────────────────────────────
 # Priority: OpenAI API key > Qwen vLLM server > Ollama local/remote
