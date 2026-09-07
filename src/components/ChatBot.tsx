@@ -47,6 +47,23 @@ async function fetchGeneralAnswer(query: string): Promise<string> {
   }
 }
 
+// ── Detect if query is conversational (not a support issue) ──────────────────
+function isConversational(query: string): boolean {
+  const q = query.toLowerCase().trim()
+  const greetings = [
+    'hi', 'hello', 'hey', 'hii', 'helo', 'hola',
+    'good morning', 'good afternoon', 'good evening', 'good night',
+    'how are you', 'how r u', 'howdy', 'sup', 'wassup',
+    'thank you', 'thanks', 'thank u', 'thnks', 'thx',
+    'bye', 'goodbye', 'see you', 'see ya', 'cya',
+    'ok', 'okay', 'cool', 'nice', 'great', 'awesome',
+    'what can you do', 'who are you', 'what are you',
+    'help', 'help me',
+  ]
+  // Exact match or starts with greeting word
+  return greetings.some(g => q === g || q.startsWith(g + ' ') || q.startsWith(g + '!') || q.startsWith(g + ','))
+}
+
 // ── KB search + AI answer ─────────────────────────────────────────────────────
 async function fetchKBResults(query: string): Promise<KBResult> {
   let docs: MatchedDoc[] = []
@@ -54,39 +71,40 @@ async function fetchKBResults(query: string): Promise<KBResult> {
   let aiAnswer = ''
   let kbError  = ''
 
-  try {
-    // Search KB — direct call with full error visibility
-    const searchRes = await axios.post(
-      `${BASE}/search-fast`,
-      { query },
-      { timeout: 10000 }
-    )
-    docs = searchRes.data?.matched_docs ?? []
+  // Skip KB search for greetings/casual messages
+  if (!isConversational(query)) {
+    try {
+      const searchRes = await axios.post(
+        `${BASE}/search-fast`,
+        { query },
+        { timeout: 10000 }
+      )
+      docs = searchRes.data?.matched_docs ?? []
 
-    // Generate KB-context answer if docs found
-    if (docs.length > 0) {
-      try {
-        const ansRes = await axios.post(
-          `${BASE}/generate-answer`,
-          { query, context_docs: docs.map((d: MatchedDoc) => d.content) },
-          { timeout: 60000 }
-        )
-        kbAnswer = ansRes.data?.answer ?? ''
-      } catch {
-        kbAnswer = ''
+      if (docs.length > 0) {
+        try {
+          const ansRes = await axios.post(
+            `${BASE}/generate-answer`,
+            { query, context_docs: docs.map((d: MatchedDoc) => d.content) },
+            { timeout: 60000 }
+          )
+          kbAnswer = ansRes.data?.answer ?? ''
+        } catch {
+          kbAnswer = ''
+        }
       }
-    }
-  } catch (e: unknown) {
-    if (axios.isAxiosError(e)) {
-      kbError = e.code === 'ECONNREFUSED' || e.code === 'ERR_NETWORK'
-        ? 'backend-offline'
-        : `API error: ${e.response?.status ?? e.message}`
-    } else {
-      kbError = 'Search failed'
+    } catch (e: unknown) {
+      if (axios.isAxiosError(e)) {
+        kbError = e.code === 'ECONNREFUSED' || e.code === 'ERR_NETWORK'
+          ? 'backend-offline'
+          : `API error: ${e.response?.status ?? e.message}`
+      } else {
+        kbError = 'Search failed'
+      }
     }
   }
 
-  // Always get general AI answer regardless of KB result
+  // Always get general AI answer (handles greetings + fallback)
   aiAnswer = await fetchGeneralAnswer(query)
 
   return { docs, kbAnswer, aiAnswer, kbError }
